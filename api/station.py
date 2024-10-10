@@ -2,7 +2,6 @@ import os
 import threading
 from fastapi import APIRouter, HTTPException
 
-from api.netplan import router, logger
 from utils.os_utils import delayed_reboot, delayed_shutdown
 
 from core.config import logger

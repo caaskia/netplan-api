@@ -1,0 +1,63 @@
+==============================================
+https://docs.armbian.com/User-Guide_Networking/
+---------------------------------------------------
+https://netplan.readthedocs.io/en/latest/using-static-ip-addresses/
+================================================
+
+
+sudo mv /etc/netplan/10-dhcp-all-interfaces.yaml /etc/netplan/10-dhcp-all-interfaces.yaml.bak
+
+===============================================
+sudo nano /etc/netplan/01-netcfg.yaml
+[---------------------------------------------
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    end0:
+      dhcp4: no
+      addresses:
+        - 192.168.1.11/24
+      nameservers:
+        addresses:
+          - 9.9.9.9
+          - 1.1.1.1
+  wifis:
+    wlan0:
+      dhcp4: yes
+      addresses:
+        - 192.168.10.21/24
+      access-points:
+        "ap-wifi":
+          password: "88888888"
+  bridges:
+    br0:
+      interfaces:
+        - end0
+        - wlan0
+      dhcp4: yes
+      addresses:
+        - 192.168.10.31/24
+      routes:
+        - to: 192.168.1.0/24
+          via: 192.168.10.31
+
+
+-------------------------------------------------]
+sudo chmod 600 /etc/netplan/*.yaml
+
+sudo netplan try
+sudo netplan apply
+
+===================
+настройка маршрута
+--------------------
+sudo ip route add 192.168.1.0/24 dev br0
+
+
+sudo chmod -R 777 /etc/netplan
+
+
+
+
+

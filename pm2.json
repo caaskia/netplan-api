@@ -1,10 +1,10 @@
 {
   "apps": [
     {
-      "name": "netplan-gui-rest",
-      "script": "gunicorn -w 4 -b 0.0.0.0:8080 -k uvicorn.workers.UvicornWorker rest:app",
+      "name": "netplan-api",
+      "script": "gunicorn -w 4 -b 0.0.0.0:8080 -k uvicorn.workers.UvicornWorker main:app",
       "max_memory_restart": "256M",
-      "error_file": "/var/www/html/logs/netplan-gui-rest-error.log",
+      "error_file": "/var/www/html/logs/netplan-api-error.log",
       "kill_timeout": 5000,
       "restart_delay": 5000
     }

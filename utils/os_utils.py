@@ -25,10 +25,9 @@ def delayed_shutdown():
 
 def delayed_netplan_change():
     try:
+        subprocess.run(["sync"], check=True)
         time.sleep(1)
-        subprocess.run(["sudo", "netplan", "generate"], check=True)
-        time.sleep(1)
-        # subprocess.run(["sudo", "netplan", "apply"], check=True)
+        subprocess.run(["sudo", "netplan", "apply"], check=True)
         logger.info("Netplan configuration applied successfully.")
 
     except subprocess.CalledProcessError as e:

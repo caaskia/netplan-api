@@ -1,0 +1,3 @@
+sudo visudo
+
+your_username ALL=(ALL) NOPASSWD: /usr/sbin/netplan generate, /usr/sbin/netplan apply

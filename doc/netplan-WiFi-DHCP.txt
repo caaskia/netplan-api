@@ -1,0 +1,17 @@
+==============================================
+sudo nano 30-wifis-dhcp.yaml
+[---------------------------------------------
+# Created by Armbian firstlogin script
+network:
+  wifis:
+    wlan0:
+      dhcp4: yes
+      dhcp6: yes
+      access-points:
+        "byfly01":
+         password: "88888888"
+-------------------------------------------------]
+sudo chmod 600 /etc/netplan/*.yaml
+
+sudo netplan try
+sudo netplan apply

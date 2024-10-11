@@ -1,9 +1,8 @@
 import os
+import subprocess
 import time
 
-import log
-
-logger = log.setup_custom_logger("root")
+from core.log import logger
 
 
 def delayed_reboot():
@@ -25,6 +24,18 @@ def delayed_shutdown():
 
 
 def delayed_netplan_change():
+    try:
+        time.sleep(1)
+        subprocess.run(["sudo", "netplan", "generate"], check=True)
+        time.sleep(1)
+        # subprocess.run(["sudo", "netplan", "apply"], check=True)
+        logger.info("Netplan configuration applied successfully.")
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error applying netplan configuration: {str(e)}")
+
+
+def os_netplan_change():
     try:
         time.sleep(1)
         os.system("sync")  # commit buffer cache to disk

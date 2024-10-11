@@ -6,12 +6,10 @@ import yaml  # PyYAML
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 
-import log
+from core.log import logger
 from model import models
 from service.netplan import NetplanService, get_netplan_service
 from utils.os_utils import delayed_netplan_change
-
-logger = log.setup_custom_logger("root")
 
 
 router = APIRouter()
@@ -233,71 +231,6 @@ async def submitEth2(data: models.SubmitEth):
             if not data["gateway"]:
                 if "routes" in netplan_config["network"]["ethernets"]["eth1"]:
                     del netplan_config["network"]["ethernets"]["eth1"]["routes"]
-
-        # write netplan changes
-        with io.open(NETPLAN, "w", encoding="utf8") as outfile:
-            yaml.dump(
-                netplan_config, outfile, default_flow_style=False, allow_unicode=True
-            )
-
-        # apply changes
-        thr = threading.Thread(target=delayed_netplan_change)
-        thr.start()
-
-        return {"response": "OK"}
-    except Exception as e:
-        logger.error(f"error = {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/submitWiFi")
-async def submitWiFi(data: models.SubmitWiFi):
-    try:
-        debug = False
-        data = jsonable_encoder(data)
-
-        if debug:
-            logger.debug(f"data = {json.dumps(data)}")
-
-        # create netplan objects (https://netplan.io/)
-        netplan_wifi = {
-            "dhcp4": False,
-            "dhcp6": False,
-            "addresses": data["addresses"],
-            "routes": [{"to": "default", "via": data["gateway"]}],
-            "nameservers": {"addresses": data["nameservers"]},
-            "access-points": {data["ssid"]: {"password": data["ssidPassword"]}},
-        }
-        netplan_ap_no_password = {data["ssid"]: {}}
-
-        if debug:
-            logger.debug("netplan_wifi = " + json.dumps(netplan_wifi))
-
-        # get netplan file
-        with open(NETPLAN, "r") as stream:
-            try:
-                netplan_config = yaml.safe_load(stream)
-                if debug:
-                    logger.debug("netplan_config = " + json.dumps(netplan_config))
-                stream.close()
-            except yaml.YAMLError as e:
-                logger.error(f"error = {str(e)}")
-                raise HTTPException(status_code=500, detail=str(e))
-
-        # update netplan file
-        netplan_config["network"]["wifis"]["wlp1s0"] = netplan_wifi
-        if not data["ssidPassword"]:
-            netplan_config[["network"]["wifis"]["wlp1s0"]["access-points"]] = (
-                netplan_ap_no_password
-            )
-
-        # remove unused values
-        if data["deleteWiFi"]:
-            if "wifis" in netplan_config["network"]:
-                del netplan_config["network"]["wifis"]
-        else:
-            if not data["gateway"]:
-                del netplan_config["network"]["wifis"]["wlp1s0"]["routes"]
 
         # write netplan changes
         with io.open(NETPLAN, "w", encoding="utf8") as outfile:

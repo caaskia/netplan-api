@@ -10,10 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-import log
-from api import netplan, station, network
-
-logger = log.setup_custom_logger("root")
+from core.log import logger
+from api import netplan, station, network, wifi
 
 VERSION = "0.0.1"
 
@@ -31,8 +29,9 @@ app = FastAPI(
     lifespan=startup_and_shutdown,
 )
 
-app.include_router(netplan.router, prefix="/api/netplan", tags=["netplan"])
 app.include_router(network.router, prefix="/api/network", tags=["network"])
+app.include_router(netplan.router, prefix="/api/netplan", tags=["netplan"])
+app.include_router(wifi.router, prefix="/api/wifi", tags=["wifi"])
 app.include_router(station.router, prefix="/api/station", tags=["station"])
 
 origins = ["*"]

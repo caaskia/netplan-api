@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# model/models.py
+
 from enum import Enum
 
 from pydantic import BaseModel
@@ -23,13 +23,19 @@ class SubmitEth(BaseModel):
     deleteEth: bool
 
 
-class SubmitWiFi(BaseModel):
+class BaseWiFi(BaseModel):
+    ssid: str
+    ssidPassword: str
+
+
+class CreateWiFi(BaseWiFi):
     gateway: str
     addresses: List[str]
     nameservers: List[str]
+
+
+class DeleteWiFi(BaseWiFi):
     deleteWiFi: bool
-    ssid: str
-    ssidPassword: str
 
 
 class UpdateStationWifi(BaseModel):

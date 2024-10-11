@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from utils.os_utils import delayed_reboot, delayed_shutdown
 
-from core.config import logger
+from core.log import logger
 
 router = APIRouter()
 

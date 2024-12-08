@@ -1,0 +1,6 @@
+nmcli -t -f ACTIVE,SSID,MODE,FREQ,SIGNAL,SECURITY device wifi
+
+nmcli -t -f IN-USE,SSID,MODE,FREQ,SIGNAL,SECURITY device wifi
+
+
+nmcli -t -f DEVICE,STATE,CONNECTION device status

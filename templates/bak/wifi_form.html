@@ -37,9 +37,16 @@
             font-weight: bold;
         }
 
-        input[type="text"],
         input[type="password"] {
-            width: 100%;
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #B0BEC5;
+            border-radius: 4px;
+        }
+
+        select {
+            width: 95%;
             padding: 10px;
             margin-bottom: 16px;
             border: 1px solid #B0BEC5;
@@ -61,7 +68,7 @@
             background-color: #004D40;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 400px) {
             .form-container {
                 padding: 15px;
             }
@@ -78,10 +85,15 @@
 </head>
 <body>
     <div class="form-container">
-        <h1>Connect WiFi</h1>
-        <form action="/connectWiFi" method="post">
+        <h3>Connect WiFi</h3>
+        <form action="/api/wifi/connectWiFi" method="post">
             <label for="ssid">SSID:</label>
-            <input type="text" id="ssid" name="ssid" required>
+            <select id="ssid" name="ssid" required>
+                <option value="">Select SSID</option>
+                {% for ssid in ssids %}
+                    <option value="{{ ssid }}">{{ ssid }}</option>
+                {% endfor %}
+            </select>
 
             <label for="ssidPassword">SSID Password:</label>
             <input type="password" id="ssidPassword" name="ssidPassword" required>

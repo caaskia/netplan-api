@@ -9,11 +9,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from core.log import logger
 from api import netplan, station, network, wifi
+from core.log import logger
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 
 @asynccontextmanager
@@ -28,6 +29,10 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=startup_and_shutdown,
 )
+
+# Подключение маршрута для статических файлов
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 app.include_router(network.router, prefix="/api/network", tags=["network"])
 app.include_router(netplan.router, prefix="/api/netplan", tags=["netplan"])

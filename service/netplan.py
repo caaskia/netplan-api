@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 
 from core.config import settings
 from core.log import logger
-from model.models import BaseWiFi
+from model.models import BaseWiFi, CreateWiFi
 from utils.os_utils import delayed_netplan_change
 
 
@@ -177,7 +177,7 @@ class NetplanService:
         thr = threading.Thread(target=delayed_netplan_change)
         thr.start()
 
-    async def update_wifi(self, data: BaseWiFi):
+    async def update_wifi(self, data: CreateWiFi):
         debug = settings.debug
         data = jsonable_encoder(data)
 

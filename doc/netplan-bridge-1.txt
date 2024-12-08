@@ -1,0 +1,45 @@
+===============================================
+sudo nano /etc/netplan/01-netcfg.yaml
+[---------------------------------------------
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    end0:
+      dhcp4: no
+  wifis:
+    wlo1:
+      dhcp4: yes
+      addresses:
+        - 192.168.10.21/24
+      gateway4: 192.168.10.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+      access-points:
+        "wifi_ssid_name":
+          password: "88888888"
+  bridges:
+    br0:
+      interfaces:
+        - end0
+        - wlo1
+      addresses:
+        - 192.168.1.11/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+-------------------------------------------------------------------]
+
+sudo sysctl -w net.ipv4.ip_forward=1
+echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.conf
+
+
+-------------------
+sudo iptables -t nat -A POSTROUTING -o wlo1 -j MASQUERADE
+sudo iptables -A FORWARD -i wlo1 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i br0 -o wlo1 -j ACCEPT
+==========================================================================================

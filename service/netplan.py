@@ -13,6 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from core.config import settings
 from core.log import logger
 from model.models import BaseWiFiData, UpdateWiFiData
+from utils.ip_utils import connection_wifi_up
 from utils.os_utils import delayed_netplan_change
 
 
@@ -132,15 +133,22 @@ class NetplanService:
                     logger.debug(f"netplan_config = {json.dumps(netplan_config)}")
             except yaml.YAMLError as e:
                 logger.error(f"Error reading netplan file: {str(e)}")
-                raise HTTPException(
-                    status_code=500, detail="Error reading netplan file"
-                )
+                return None
         return netplan_config
 
+
     @staticmethod
-    async def create_conn_wifi(data: BaseWiFiData):
+    def netplan_conf_up(netplan_config):
+        wifis = netplan_config.get("network").get("wifis")
+        device = list(wifis.keys())[0]
+        ap_dict = wifis[device].get("access-points")
+        ap = list(ap_dict.keys())[0]
+        return connection_wifi_up(device, ap)
+
+
+    @staticmethod
+    async def create_netplan_config(data: BaseWiFiData):
         data = jsonable_encoder(data)
-        netplan_config = {}
         debug = settings.debug
         if debug:
             logger.debug(f"data = {json.dumps(data)}")
@@ -156,6 +164,8 @@ class NetplanService:
             logger.debug(f"netplan_wifi = {json.dumps(netplan_wifi)}")
 
         netplan_config = NetplanService.get_netplan_conf(settings.netplan_wifi01)
+        if not netplan_config:
+            netplan_config = {}
 
         if "network" not in netplan_config:
             netplan_config["network"] = {}

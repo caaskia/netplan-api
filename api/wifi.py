@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Form, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from core.config import logger
+from core.config import settings, logger
 from model.models import BaseWiFiData, UpdateWiFiData
 from service.netplan import NetplanService, get_netplan_service
 from utils.ip_utils import (
@@ -15,7 +15,7 @@ from utils.ip_utils import (
     get_current_wifi_info,
     get_available_wifi,
     is_wifi_connected,
-    disconnect_wifi,
+    disconnect_wifi, connection_wifi_up,
 )
 
 router = APIRouter()
@@ -101,7 +101,7 @@ async def connect_wifi(
 
         data = BaseWiFiData(ssid=ssid, ssidPassword=ssid_password, iwface=iwface)
 
-        if not await netplan_service.create_conn_wifi(data):
+        if not await netplan_service.create_netplan_config(data):
             raise HTTPException(status_code=500, detail="Error writing netplan file")
 
         await netplan_service.apply_conn_wifi()
@@ -182,9 +182,19 @@ async def update_wifi(
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.get("/upWiFi")
+async def connection_up( netplan_service: NetplanService = Depends(get_netplan_service)):
+    netplan_config = netplan_service.get_netplan_conf(settings.netplan_wifi01)
+    if netplan_config:
+        if netplan_service.netplan_conf_up(netplan_config):
+            return RedirectResponse(url="/api/wifi/getWiFi")
+    return {
+        "status": "error",
+        "message": "No active Wi-Fi connection found to disconnect.",
+    }
 
-@router.get("/disconnectWiFi")
-async def disconnect_conn_wifi():
+@router.get("/downWiFi")
+async def connection_down():
     disconnect = disconnect_wifi()
     if disconnect:
         return RedirectResponse(url="/api/wifi/getWiFi")

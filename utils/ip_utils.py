@@ -172,7 +172,7 @@ def get_device_status():
         # Получаем интерфейс
         # ["nmcli", "-t", "device", "status"]
         result = subprocess.run(
-            ["nmcli", "-t", "-f", "DEVICE,TYPE,CONNECTION,STATE", "device", "status"],
+            ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -262,6 +262,36 @@ def get_current_wifi_info():
         return None
 
 
+def connection_wifi_up(device, ap):
+    try:
+        connection = f"netplan-{device}-{ap}"
+        device_status = get_device_status()
+        if device_status:
+            for line in device_status:
+                fields = line.split(":")
+                type_iface = fields[1]
+                if "wifi" not in type_iface:
+                    continue
+                device_cli = fields[0]
+                # state = fields[2]
+                if device == device_cli:
+                    if "disconnected" in line:
+                        subprocess.run(
+                            ["nmcli", "connection", "up", connection],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                        )
+                        logger.info(f"Connected to Wi-Fi connection: {connection}")
+                    else:
+                        logger.info(f'The device "{device}" is already connected')
+                    return True
+                else:
+                    logger.error(f"The device name {device} does not match with {device_cli}")
+    except Exception as e:
+        logger.error(f"Failed to connect Wi-Fi: {e}")
+    return False
+
 def disconnect_wifi():
     """Отключает текущее Wi-Fi соединение, используя nmcli."""
     try:
@@ -275,8 +305,8 @@ def disconnect_wifi():
                     continue
 
                 device = fields[0]
-                connection = fields[2]
-                state = fields[3]
+                state = fields[2]
+                connection = fields[3]
 
                 # Если состояние устройства - подключено (connected)
                 # ["nmcli", "connection", "down", connection]

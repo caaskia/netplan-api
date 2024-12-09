@@ -1,0 +1,33 @@
+<!-- templates/wifi_form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update WiFi</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h3>Update WiFi Configuration</h3>
+        <form action="/updateWiFi" method="post">
+            <label for="gateway">Gateway:</label>
+            <input type="text" id="gateway" name="gateway" required><br><br>
+
+            <label for="addresses">Addresses (comma separated):</label>
+            <input type="text" id="addresses" name="addresses" required><br><br>
+
+            <label for="nameservers">Nameservers (comma separated):</label>
+            <input type="text" id="nameservers" name="nameservers" required><br><br>
+
+            <label for="ssid">SSID:</label>
+            <input type="text" id="ssid" name="ssid" required><br><br>
+
+            <label for="ssidPassword">SSID Password:</label>
+            <input type="password" id="ssidPassword" name="ssidPassword" required><br><br>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

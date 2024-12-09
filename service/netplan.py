@@ -1,3 +1,5 @@
+# service.netplan
+
 import io
 import threading
 from functools import lru_cache
@@ -17,6 +19,13 @@ from utils.os_utils import delayed_netplan_change
 class NetplanService:
     def __init__(self):
         self.name = "netplan_service"
+
+    @staticmethod
+    async def apply_conn_wifi():
+        # Применение изменений через команду netplan
+        logger.info("Applying netplan changes...")
+        thr = threading.Thread(target=delayed_netplan_change)
+        thr.start()
 
     @staticmethod
     def get_network(netplan_config):
@@ -114,7 +123,7 @@ class NetplanService:
         return ifaces
 
     @staticmethod
-    async def create_conn_wifi(data: BaseWiFiData, iwface: str):
+    async def create_conn_wifi(data: BaseWiFiData):
         data = jsonable_encoder(data)
         netplan_config = {}
         debug = settings.debug
@@ -154,7 +163,7 @@ class NetplanService:
             netplan_config["network"]["wifis"] = {}
 
         # Обновляем конфигурацию Wi-Fi для заданного интерфейса (iwface)
-        netplan_config["network"]["wifis"][iwface] = netplan_wifi
+        netplan_config["network"]["wifis"][data["iwface"]] = netplan_wifi
 
         if debug:
             logger.debug(f"Updated netplan_config = {json.dumps(netplan_config)}")
@@ -170,12 +179,8 @@ class NetplanService:
                 )
         except Exception as e:
             logger.error(f"Error writing netplan file: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error writing netplan file")
-
-        # Применение изменений через команду netplan
-        logger.info("Applying netplan changes...")
-        thr = threading.Thread(target=delayed_netplan_change)
-        thr.start()
+            return False
+        return True
 
     async def update_wifi(self, data: UpdateWiFiData):
         debug = settings.debug
@@ -184,57 +189,80 @@ class NetplanService:
         if debug:
             logger.debug(f"data = {json.dumps(data)}")
 
+        addresses = []
+        for addr in data["addresses"]:
+            if "/" not in addr:
+                addr += "/24"  # Указываем префикс по умолчанию (например, 24)
+            addresses.append(addr)
+
         # create netplan objects (https://netplan.io/)
         netplan_wifi = {
-            "dhcp4": False,
-            "dhcp6": False,
-            "addresses": data["addresses"],
-            "routes": [{"to": "default", "via": data["gateway"]}],
-            "nameservers": {"addresses": data["nameservers"]},
+            "dhcp4": True,
+            "dhcp6": True,
+            "addresses": addresses,
             "access-points": {data["ssid"]: {"password": data["ssidPassword"]}},
         }
-        netplan_ap_no_password = {data["ssid"]: {}}
+
+        if data.get("nameservers"):
+            netplan_wifi["nameservers"] = {"addresses": data["nameservers"]}
 
         if debug:
             logger.debug("netplan_wifi = " + json.dumps(netplan_wifi))
 
         # get netplan file
-        with open(settings.netplan_wifi, "r") as stream:
+        netplan_path = Path(settings.netplan_wifi01)
+        if netplan_path.exists():
             try:
-                netplan_config = yaml.safe_load(stream)
-                if debug:
-                    logger.debug("netplan_config = " + json.dumps(netplan_config))
-                stream.close()
+                with open(netplan_path, "r") as stream:
+                    netplan_config = yaml.safe_load(stream)
+                    if debug:
+                        logger.debug(f"netplan_config = {json.dumps(netplan_config)}")
             except yaml.YAMLError as e:
-                logger.error(f"error = {str(e)}")
-                raise HTTPException(status_code=500, detail=str(e))
+                logger.error(f"Error reading netplan file: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Error reading netplan file"
+                )
 
-        # update netplan file
-        netplan_config["network"]["wifis"]["wlp1s0"] = netplan_wifi
-        if not data["ssidPassword"]:
-            netplan_config[["network"]["wifis"]["wlp1s0"]["access-points"]] = (
-                netplan_ap_no_password
-            )
+        if "network" not in netplan_config:
+            netplan_config["network"] = {}
+            netplan_config["network"]["version"] = 2
+            netplan_config["network"]["renderer"] = "NetworkManager"
 
-        # remove unused values
-        if data["deleteWiFi"]:
-            if "wifis" in netplan_config["network"]:
-                del netplan_config["network"]["wifis"]
-        else:
-            if not data["gateway"]:
-                del netplan_config["network"]["wifis"]["wlp1s0"]["routes"]
+        # Обновление или создание записи для Wi-Fi интерфейса (например, wlan0)
+        if "wifis" not in netplan_config["network"]:
+            netplan_config["network"]["wifis"] = {}
 
-        # write netplan changes
-        with io.open(settings.netplan_wifi01, "w", encoding="utf8") as outfile:
-            yaml.dump(
-                netplan_config, outfile, default_flow_style=False, allow_unicode=True
-            )
+        # Обновляем конфигурацию Wi-Fi для заданного интерфейса (iwface)
+        netplan_config["network"]["wifis"][data["iwface"]] = netplan_wifi
 
-        # apply changes
-        thr = threading.Thread(target=delayed_netplan_change)
-        thr.start()
+        if debug:
+            logger.debug(f"Updated netplan_config = {json.dumps(netplan_config)}")
+
+        # Запись изменений обратно в файл Netplan
+        try:
+            with io.open(settings.netplan_wifi01, "w", encoding="utf8") as outfile:
+                yaml.dump(
+                    netplan_config,
+                    outfile,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                )
+        except Exception as e:
+            logger.error(f"Error writing netplan file: {str(e)}")
+            return False
+        # netplan_path.chmod(0o644)
+        return True
 
 
 @lru_cache()
 def get_netplan_service() -> NetplanService:
     return NetplanService()
+
+    # netplan_wifi = {
+    #     "dhcp4": False,
+    #     "dhcp6": False,
+    #     "addresses": data["addresses"],
+    #     "routes": [{"to": "default", "via": data["gateway"]}],
+    #     "nameservers": {"addresses": data["nameservers"]},
+    #     "access-points": {data["ssid"]: {"password": data["ssidPassword"]}},
+    # }

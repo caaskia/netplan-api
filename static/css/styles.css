@@ -18,8 +18,18 @@ body {
     width: 100%;
 }
 
+.form-container input[type="text"] {
+    width: 100%;
+}
+
 h1 {
     text-align: center;
+    color: #00796B;
+}
+
+h3 {
+    text-align: center;
+    margin-bottom: 20px;
     color: #00796B;
 }
 
@@ -60,6 +70,36 @@ button:hover {
     background-color: #004D40;
 }
 
+/* Стили для info-container */
+.info-container {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #B0BEC5; /* Тонкая линия серого цвета */
+    border-radius: 4px;
+    background-color: #F9F9F9; /* Светлый фон для выделения */
+    text-align: left; /* Выровнять текст по левому краю */
+    font-size: 14px; /* Немного уменьшенный шрифт */
+}
+
+.info-container p {
+    margin: 5px 0;
+    color: #37474F; /* Серый текст */
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.form-row label {
+    margin-right: 10px;
+}
+
+.form-row input {
+    flex: 1;
+    padding: 5px;
+}
+
 @media (max-width: 400px) {
     .form-container {
         padding: 15px;
@@ -67,6 +107,10 @@ button:hover {
 
     h1 {
         font-size: 20px;
+    }
+
+    h3 {
+        font-size: 18px;
     }
 
     button {

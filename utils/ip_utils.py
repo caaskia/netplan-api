@@ -5,13 +5,14 @@ import subprocess
 import netifaces  # netifaces2
 
 
-def get_iface_gateway_00(iface = 'default'):
+def get_iface_gateway_00(iface="default"):
     gateways = netifaces.gateways()
     for key, value in gateways.items():
         if iface in value[0]:
             gateway_iface = value[0][0]
             return gateway_iface
     return None
+
 
 def get_iface_gateway(iface="default"):
     """
@@ -38,7 +39,6 @@ def get_iface_gateway(iface="default"):
     except Exception as e:
         print(f"Failed to retrieve gateway for interface '{iface}': {e}")
         return None
-
 
 
 def get_ip_addresses():
@@ -128,12 +128,12 @@ def get_available_wifi():
         print(f"Failed to retrieve current Wi-Fi connection info: {e}")
         return None
 
+
 def get_device_status():
     """
     nmcli -t -f DEVICE,CONNECTION,STATE device status
     """
     try:
-
         # Получаем интерфейс
         result = subprocess.run(
             ["nmcli", "-t", "-f", "DEVICE,CONNECTION,STATE", "device", "status"],
@@ -174,19 +174,24 @@ def get_current_wifi_info():
                 iface_result = get_device_status()
                 for iface_line in iface_result:
                     if ssid in iface_line:  # Ищем SSID в статусе интерфейса
-                        wifi_info["iface"] = iface_line.split(":")[0]
+                        wifi_info["iwface"] = iface_line.split(":")[0]
                         break
 
                 # Используем netifaces для получения IP-адреса и шлюза
-                if "iface" in wifi_info:
-                    iface = wifi_info["iface"]
-                    if netifaces.AF_INET in netifaces.ifaddresses(iface):
-                        addr_info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-                        wifi_info["ip_addr_wifi"] = addr_info.get("addr")
-                    gw_wifi = get_iface_gateway(iface)
+                if "iwface" in wifi_info:
+                    iwface = wifi_info["iwface"]
+                    if netifaces.AF_INET in netifaces.ifaddresses(iwface):
+                        addr_info = netifaces.ifaddresses(iwface)[netifaces.AF_INET][0]
+                        ip_addr = addr_info.get("addr")
+                        if ip_addr:
+                            wifi_info["ip_addr"] = ip_addr
+                            ip_addr_static = ".".join(ip_addr.split(".")[:-1]) + ".21"
+                            wifi_info["ip_addr_static"] = ip_addr_static
+
+                    gw_wifi = get_iface_gateway(iwface)
                     if gw_wifi:
                         print(f"Gateway for Wi-Fi: {gw_wifi}")
-                        wifi_info["gw_wifi"] = gw_wifi
+                        wifi_info["gw"] = gw_wifi
                 return wifi_info
         print("No active Wi-Fi connection found.")
         return None

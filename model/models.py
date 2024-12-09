@@ -26,12 +26,12 @@ class SubmitEth(BaseModel):
 class BaseWiFiData(BaseModel):
     ssid: str
     ssidPassword: str
+    iwface: str
 
 
 class UpdateWiFiData(BaseWiFiData):
-    gateway: str
-    addresses: List[str]
-    nameservers: List[str]
+    addresses: List[str] | None
+    nameservers: List[str] | None
 
 
 class DeleteWiFiData(BaseWiFiData):

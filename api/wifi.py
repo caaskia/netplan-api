@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from core.config import logger
 from model.models import BaseWiFiData, UpdateWiFiData
 from service.netplan import NetplanService, get_netplan_service
-from utils.ip_utils import get_net_iface, get_wifi_ssids
+from utils.ip_utils import get_net_iface, get_wifi_ssids, get_current_wifi_info
 
 router = APIRouter()
 
@@ -27,12 +27,10 @@ async def get_wifi(request: Request):
 @router.post("/connectWiFi")
 async def connect_wifi(
     ssid: str = Form(...),
-    ssidPassword: str = Form(...),
+    ssid_password: str = Form(...),
     netplan_service: NetplanService = Depends(get_netplan_service),
 ):
     try:
-        data = BaseWiFiData(ssid=ssid, ssidPassword=ssidPassword)
-
         interfaces = get_net_iface()  # список интерфейсов
         iwface = None
 
@@ -44,7 +42,12 @@ async def connect_wifi(
         if not iwface:
             raise HTTPException(status_code=404, detail="Wi-Fi interface not found")
 
-        await netplan_service.create_conn_wifi(data, iwface)
+        data = BaseWiFiData(ssid=ssid, ssidPassword=ssid_password, iwface=iwface)
+
+        if await netplan_service.create_conn_wifi(data):
+            await netplan_service.apply_conn_wifi()
+        else:
+            raise HTTPException(status_code=500, detail="Error writing netplan file")
         return {"response": "OK"}
     except Exception as e:
         logger.error(f"error = {str(e)}")
@@ -56,63 +59,51 @@ async def get_update_wifi_data():
     """
     Возвращает HTML-форму для создания Wi-Fi конфигурации.
     """
-    return templates.TemplateResponse("wifi_update_form.html", {"request": {}})
+    wifi_info = get_current_wifi_info()
+
+    return templates.TemplateResponse(
+        "wifi_update_form.html", {"request": {}, "wifi_info": wifi_info}
+    )
 
 
 @router.post("/updateWiFi")
 async def update_wifi(
-    wifi_data: UpdateWiFiData = Depends(),  # Автоматическое преобразование данных формы
+    ssid: str = Form(...),
+    ssid_password: str = Form(...),
+    iwface: str = Form(...),
+    ip_addr_static: str = Form(...),
+    nameservers: str = Form(...),
     netplan_service: NetplanService = Depends(get_netplan_service),
 ):
     """
     Обрабатывает данные формы и настраивает Wi-Fi через Netplan.
     """
     try:
-        # Получаем Wi-Fi интерфейс
-        interfaces = await netplan_service.get_wifi_interfaces()
-        iwface = next(iter(interfaces.keys()), None)  # Первый Wi-Fi интерфейс
+        # Разделяем строку nameservers на список
 
-        if not iwface:
-            raise HTTPException(status_code=404, detail="Wi-Fi interface not found")
+        nameservers_list = (
+            [ns.strip() for ns in nameservers.split(",")] if nameservers else None
+        )
+
+        wifi_data = UpdateWiFiData(
+            ssid=ssid,
+            ssidPassword=ssid_password,
+            iwface=iwface,
+            addresses=[
+                ip_addr_static,
+            ],
+            nameservers=nameservers_list,
+        )
 
         # Обновляем Wi-Fi конфигурацию
-        await netplan_service.update_wifi(
-            wifi_data.dict()
-        )  # Передаём данные как словарь
+        if await netplan_service.update_wifi(wifi_data.model_dump()):
+            await netplan_service.apply_conn_wifi()
+        else:
+            raise HTTPException(status_code=500, detail="Error update netplan file")
 
         return {
             "status": "success",
-            "message": "Wi-Fi configuration created successfully",
+            "message": "Wi-Fi configuration updated successfully",
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-
-# @router.post("/createWiFi")
-# async def create_wifi(
-#         gateway: str = Form(...),
-#         addresses: str = Form(...),
-#         nameservers: str = Form(...),
-#         ssid: str = Form(...),
-#         ssidPassword: str = Form(...),
-#         netplan_service: NetplanService = Depends(get_netplan_service),
-# ):
-#     try:
-#         # Преобразуем адреса и nameservers в списки
-#         addresses_list = addresses.split(',')
-#         nameservers_list = nameservers.split(',')
-#
-#         # Создаем объект CreateWiFi
-#         data = CreateWiFi(
-#             gateway=gateway,
-#             addresses=addresses_list,
-#             nameservers=nameservers_list,
-#             ssid=ssid,
-#             ssidPassword=ssidPassword
-#         )
-#
-#         await netplan_service.submit_wifi(data)
-#         return {"response": "OK"}
-#     except Exception as e:
-#         logger.error(f"error = {str(e)}")
-#         raise HTTPException(status_code=500, detail=str(e))

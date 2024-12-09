@@ -36,8 +36,12 @@
                 <p><i>Signal Strength:</i> {{ wifi_info.signal_strength }}</p>
             </div>
 
-
-            <p><strong>IP Address:</strong> {{ wifi_info.ip_addr }}</p>
+            <p><strong>IP Addresses:</strong></p>
+            <ul>
+                {% for ip in wifi_info.ip_addresses %}
+                    <li>{{ ip }}</li>
+                {% endfor %}
+            </ul>
 
             <div class="form-row">
                 <label for="ip_addr_static">Static IP Address:</label>

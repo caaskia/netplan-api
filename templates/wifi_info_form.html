@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Connection Information</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h3>WiFi Connection Information</h3>
+
+        <!-- Информация о текущем соединении -->
+        <div class="info-container">
+            <p><strong>SSID:</strong> {{ wifi_info.ssid }}</p>
+            <p><strong>Interface:</strong> {{ wifi_info.iwface }}</p>
+            <p><strong>Frequency:</strong> {{ wifi_info.frequency }}</p>
+            <p><strong>Mode:</strong> {{ wifi_info.mode }}</p>
+            <p><strong>Security:</strong> {{ wifi_info.security }}</p>
+            <p><strong>Signal Strength:</strong> {{ wifi_info.signal_strength }}</p>
+            <p><strong>IP Addresses:</strong></p>
+            <ul>
+                {% for ip in wifi_info.ip_addresses %}
+                    <li>{{ ip }}</li>
+                {% endfor %}
+            </ul>
+            <p><strong>Static IP Address:</strong> {{ wifi_info.ip_addr_static }}</p>
+            <p><strong>Gateway:</strong> {{ wifi_info.gw }}</p>
+        </div>
+
+        <!-- Кнопка для обновления конфигурации -->
+        <form action="/api/wifi/updateWiFi" method="get">
+            <button type="submit">Update</button>
+        </form>
+    </div>
+</body>
+</html>

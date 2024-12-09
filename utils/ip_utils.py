@@ -1,8 +1,42 @@
 # utils/ip_utils.py
 
+
 import subprocess
 
 import netifaces  # netifaces2
+
+from core.config import logger
+
+
+def is_wifi_connected() -> bool:
+    """Проверяет, подключен ли Wi-Fi с использованием nmcli."""
+    try:
+        result = subprocess.run(
+            # ["nmcli", "-t", "-f", "in-use,ssid", "dev", "wifi",  "|",  "grep", "^*"],
+            ["nmcli", "-t", "-f", "in-use,ssid", "dev", "wifi"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if result.returncode == 0 and "*:" in result.stdout:
+            return True  # Если Wi-Fi подключен
+        return False
+    except Exception as e:
+        return False
+
+
+def is_wifi_connected_iwgetid(iwface: str) -> bool:
+    """Проверяет, подключен ли интерфейс Wi-Fi."""
+    try:
+        result = subprocess.run(
+            ["iwgetid", iwface],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return result.returncode == 0  # Если команда выполнена успешно
+    except Exception as e:
+        return False
 
 
 def get_iface_gateway_00(iface="default"):
@@ -37,7 +71,7 @@ def get_iface_gateway(iface="default"):
                             return gw_entry[0]  # Возвращаем IP-адрес шлюза
         return None
     except Exception as e:
-        print(f"Failed to retrieve gateway for interface '{iface}': {e}")
+        logger.error(f"Failed to retrieve gateway for interface '{iface}': {e}")
         return None
 
 
@@ -52,7 +86,7 @@ def get_ip_addresses():
                         addr_info["addr"] for addr_info in addrs[netifaces.AF_INET]
                     ]
     except Exception as e:
-        print(f"Failed to retrieve IP addresses: {e}")
+        logger.error(f"Failed to retrieve IP addresses: {e}")
     return ip_addresses
 
 
@@ -71,7 +105,7 @@ def get_net_iface():
                     continue
                 interfaces[interface] = connection_type
     except Exception as e:
-        print(f"Failed to retrieve network interfaces: {e}")
+        logger.error(f"Failed to retrieve network interfaces: {e}")
     return interfaces
 
 
@@ -87,14 +121,15 @@ def get_wifi_ssids():
 
         # Проверяем наличие ошибок
         if result.returncode != 0:
-            print(f"Error executing nmcli: {result.stderr}")
+            logger.error(f"Error executing nmcli: {result.stderr}")
             return []
 
         # Разбиваем результат на строки и убираем пустые SSID
         ssid_list = [line for line in result.stdout.splitlines() if line.strip()]
+        ssid_list.sort()
         return ssid_list
     except Exception as e:
-        print(f"Failed to retrieve Wi-Fi SSIDs: {e}")
+        logger.error(f"Failed to retrieve Wi-Fi SSIDs: {e}")
         return []
 
 
@@ -121,11 +156,11 @@ def get_available_wifi():
         )
         # Проверяем наличие ошибок
         if result.returncode != 0:
-            print(f"Error executing nmcli: {result.stderr}")
+            logger.error(f"Error executing nmcli: {result.stderr}")
             return None
         return result.stdout.splitlines()
     except Exception as e:
-        print(f"Failed to retrieve current Wi-Fi connection info: {e}")
+        logger.error(f"Failed to retrieve current Wi-Fi connection info: {e}")
         return None
 
 
@@ -142,12 +177,31 @@ def get_device_status():
             text=True,
         )
         if result.returncode != 0:
-            print(f"Error executing nmcli: {result.stderr}")
+            logger.error(f"Error executing nmcli: {result.stderr}")
             return None
         return result.stdout.splitlines()
     except Exception as e:
-        print(f"Failed to retrieve current Wi-Fi connection info: {e}")
+        logger.error(f"Failed to retrieve current Wi-Fi connection info: {e}")
         return None
+
+
+def get_all_ip_addresses(iface):
+    """
+    Возвращает список всех IPv4-адресов для указанного интерфейса.
+
+    :param iface: Имя сетевого интерфейса (например, 'wlan0').
+    :return: Список IPv4-адресов или пустой список, если нет доступных адресов.
+    """
+    try:
+        # Проверяем, есть ли информация о адресах IPv4
+        if netifaces.AF_INET in netifaces.ifaddresses(iface):
+            # Извлекаем все адреса IPv4
+            addr_infos = netifaces.ifaddresses(iface)[netifaces.AF_INET]
+            ip_addresses = [addr_info.get("addr") for addr_info in addr_infos]
+            return ip_addresses
+    except Exception as e:
+        logger.error(f"Failed to retrieve IP addresses for interface '{iface}': {e}")
+    return []
 
 
 def get_current_wifi_info():
@@ -181,22 +235,28 @@ def get_current_wifi_info():
                 if "iwface" in wifi_info:
                     iwface = wifi_info["iwface"]
                     if netifaces.AF_INET in netifaces.ifaddresses(iwface):
-                        addr_info = netifaces.ifaddresses(iwface)[netifaces.AF_INET][0]
-                        ip_addr = addr_info.get("addr")
-                        if ip_addr:
-                            wifi_info["ip_addr"] = ip_addr
+                        # addr_info = netifaces.ifaddresses(iwface)[netifaces.AF_INET][0]
+                        addr_infos = netifaces.ifaddresses(iwface)[netifaces.AF_INET]
+                        ip_addresses = [
+                            addr_info.get("addr") for addr_info in addr_infos
+                        ]
+                        if ip_addresses:
+                            wifi_info["ip_addresses"] = ip_addresses
+                            wifi_info["ip_addr"] = ip_addresses
+                            ip_addr = ip_addresses[0]
+
                             ip_addr_static = ".".join(ip_addr.split(".")[:-1]) + ".21"
                             wifi_info["ip_addr_static"] = ip_addr_static
 
                     gw_wifi = get_iface_gateway(iwface)
                     if gw_wifi:
-                        print(f"Gateway for Wi-Fi: {gw_wifi}")
+                        logger.debug(f"Gateway for Wi-Fi: {gw_wifi}")
                         wifi_info["gw"] = gw_wifi
                 return wifi_info
-        print("No active Wi-Fi connection found.")
+        logger.warning("No active Wi-Fi connection found.")
         return None
     except Exception as e:
-        print(f"Failed to retrieve current Wi-Fi connection info: {e}")
+        logger.error(f"Failed to retrieve current Wi-Fi connection info: {e}")
         return None
 
 
@@ -205,8 +265,8 @@ if __name__ == "__main__":
 
     current_wifi = get_current_wifi_info()
     if current_wifi:
-        print("Current Wi-Fi connection info:")
+        logger.info("Current Wi-Fi connection info:")
         for key, value in current_wifi.items():
-            print(f"{key}: {value}")
+            logger.info(f"{key}: {value}")
     else:
-        print("No active Wi-Fi connection.")
+        logger.warning("No active Wi-Fi connection.")

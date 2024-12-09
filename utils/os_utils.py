@@ -27,24 +27,13 @@ def delayed_netplan_change():
     try:
         subprocess.run(["sync"], check=True)
         time.sleep(1)
+        subprocess.run(["sudo", "netplan", "generate"], check=True)
+        time.sleep(1)
         subprocess.run(["sudo", "netplan", "apply"], check=True)
         logger.info("Netplan configuration applied successfully.")
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Error applying netplan configuration: {str(e)}")
-
-
-def os_netplan_change():
-    try:
-        time.sleep(1)
-        os.system("sync")  # commit buffer cache to disk
-        # generate config for the renderers
-        os.system("netplan generate")
-        time.sleep(1)
-        # apply config for the renderers
-        # os.system("netplan apply")
-    except Exception as e:
-        logger.error(f"error = {str(e)}")
 
 
 def delayed_vpn_server_change():

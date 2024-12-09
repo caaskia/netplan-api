@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from api import netplan, station, network, wifi
 from core.log import logger
 
-VERSION = "0.0.2"
+VERSION = "v0.3.0"
 
 
 @asynccontextmanager

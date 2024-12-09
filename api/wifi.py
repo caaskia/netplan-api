@@ -14,7 +14,7 @@ from utils.ip_utils import (
     get_wifi_ssids,
     get_current_wifi_info,
     get_available_wifi,
-    is_wifi_connected,
+    is_wifi_connected, disconnect_wifi,
 )
 
 router = APIRouter()
@@ -111,6 +111,7 @@ async def connect_wifi(
                 "request": request,
                 "check_url": "/api/wifi/checkConnection",
                 "redirect_url": "/api/wifi/getWiFi",
+                "attempt_count": 0,
             },
         )
     except Exception as e:
@@ -142,6 +143,8 @@ async def update_wifi(
     """
     Обрабатывает данные формы и настраивает Wi-Fi через Netplan.
     """
+    global connected_flag
+    connected_flag = False
     try:
         # Разделяем строку nameservers на список
 
@@ -163,6 +166,7 @@ async def update_wifi(
         if not await netplan_service.update_wifi(wifi_data.model_dump()):
             raise HTTPException(status_code=500, detail="Error update netplan file")
 
+        disconnected = disconnect_wifi()
         await netplan_service.apply_conn_wifi()
         asyncio.create_task(wait_for_connection(iwface))
         return templates.TemplateResponse(
@@ -171,6 +175,7 @@ async def update_wifi(
                 "request": {},
                 "check_url": "/api/wifi/checkConnection",
                 "redirect_url": "/api/wifi/getWiFi",
+                "attempt_count": 0,
             },
         )
     except Exception as e:

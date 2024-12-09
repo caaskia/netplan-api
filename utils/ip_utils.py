@@ -170,8 +170,9 @@ def get_device_status():
     """
     try:
         # Получаем интерфейс
+        # ["nmcli", "-t", "device", "status"]
         result = subprocess.run(
-            ["nmcli", "-t", "-f", "DEVICE,CONNECTION,STATE", "device", "status"],
+            ["nmcli", "-t", "-f", "DEVICE,TYPE,CONNECTION,STATE", "device", "status"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -227,7 +228,8 @@ def get_current_wifi_info():
 
                 iface_result = get_device_status()
                 for iface_line in iface_result:
-                    if ssid in iface_line:  # Ищем SSID в статусе интерфейса
+                    # if ssid in iface_line:  # Ищем SSID в статусе интерфейса
+                    if "wifi" in iface_line:  # Ищем wifi в статусе интерфейса
                         wifi_info["iwface"] = iface_line.split(":")[0]
                         break
 
@@ -258,6 +260,42 @@ def get_current_wifi_info():
     except Exception as e:
         logger.error(f"Failed to retrieve current Wi-Fi connection info: {e}")
         return None
+
+
+def disconnect_wifi():
+    """Отключает текущее Wi-Fi соединение, используя nmcli."""
+    try:
+        # Получаем список всех активных устройств и их соединений
+        device_status = get_device_status()
+        if device_status:
+            for line in device_status:
+                fields = line.split(":")
+                type_iface = fields[1]
+                if "wifi" not in type_iface:
+                    continue
+
+                device = fields[0]
+                connection = fields[2]
+                state = fields[3]
+
+                # Если состояние устройства - подключено (connected)
+                # ["nmcli", "connection", "down", connection]
+                if "connected" in state.lower():
+                    # Отключаем Wi-Fi
+                    subprocess.run(
+                        ["nmcli", "device", "disconnect", device],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                    logger.info(f"Disconnected from Wi-Fi connection: {connection}")
+                    return True
+        logger.warning("No active Wi-Fi connection found to disconnect.")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to disconnect Wi-Fi: {e}")
+        return False
+
 
 
 if __name__ == "__main__":

@@ -297,7 +297,6 @@ def disconnect_wifi():
         return False
 
 
-
 if __name__ == "__main__":
     interfaces = get_net_iface()
 

@@ -32,6 +32,11 @@
         <form action="/api/wifi/updateWiFi" method="get">
             <button type="submit">Update</button>
         </form>
+        <br>
+         <div class="btn-row">
+             <a href="/api/wifi/disconnectWiFi" class="btn-disconnect"
+                 role="button" onclick="return confirm('Отключить Wi-Fi?');">Disconnect Wi-Fi</a>
+         </div>
     </div>
 </body>
 </html>

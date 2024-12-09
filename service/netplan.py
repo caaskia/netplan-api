@@ -123,6 +123,21 @@ class NetplanService:
         return ifaces
 
     @staticmethod
+    def get_netplan_conf(config_name):
+        netplan_path = Path(config_name)
+        if netplan_path.exists():
+            try:
+                with open(netplan_path, "r") as stream:
+                    netplan_config = yaml.safe_load(stream)
+                    logger.debug(f"netplan_config = {json.dumps(netplan_config)}")
+            except yaml.YAMLError as e:
+                logger.error(f"Error reading netplan file: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Error reading netplan file"
+                )
+        return netplan_config
+
+    @staticmethod
     async def create_conn_wifi(data: BaseWiFiData):
         data = jsonable_encoder(data)
         netplan_config = {}
@@ -140,18 +155,7 @@ class NetplanService:
         if debug:
             logger.debug(f"netplan_wifi = {json.dumps(netplan_wifi)}")
 
-        netplan_path = Path(settings.netplan_wifi01)
-        if netplan_path.exists():
-            try:
-                with open(netplan_path, "r") as stream:
-                    netplan_config = yaml.safe_load(stream)
-                    if debug:
-                        logger.debug(f"netplan_config = {json.dumps(netplan_config)}")
-            except yaml.YAMLError as e:
-                logger.error(f"Error reading netplan file: {str(e)}")
-                raise HTTPException(
-                    status_code=500, detail="Error reading netplan file"
-                )
+        netplan_config = NetplanService.get_netplan_conf(settings.netplan_wifi01)
 
         if "network" not in netplan_config:
             netplan_config["network"] = {}

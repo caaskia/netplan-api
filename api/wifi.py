@@ -14,7 +14,8 @@ from utils.ip_utils import (
     get_wifi_ssids,
     get_current_wifi_info,
     get_available_wifi,
-    is_wifi_connected, disconnect_wifi,
+    is_wifi_connected,
+    disconnect_wifi,
 )
 
 router = APIRouter()
@@ -180,3 +181,15 @@ async def update_wifi(
         )
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@router.get("/disconnectWiFi")
+async def disconnect_conn_wifi():
+    disconnect = disconnect_wifi()
+    if disconnect:
+        return RedirectResponse(url="/api/wifi/getWiFi")
+    else:
+        return {
+            "status": "error",
+            "message": "No active Wi-Fi connection found to disconnect.",
+        }

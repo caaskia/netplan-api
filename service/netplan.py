@@ -131,10 +131,11 @@ class NetplanService:
                 with open(netplan_path, "r") as stream:
                     netplan_config = yaml.safe_load(stream)
                     logger.debug(f"netplan_config = {json.dumps(netplan_config)}")
+                return netplan_config
             except yaml.YAMLError as e:
                 logger.error(f"Error reading netplan file: {str(e)}")
-                return None
-        return netplan_config
+        return {}
+
 
     @staticmethod
     def netplan_conf_up(netplan_config):
@@ -162,8 +163,6 @@ class NetplanService:
             logger.debug(f"netplan_wifi = {json.dumps(netplan_wifi)}")
 
         netplan_config = NetplanService.get_netplan_conf(settings.netplan_wifi01)
-        if not netplan_config:
-            netplan_config = {}
 
         if "network" not in netplan_config:
             netplan_config["network"] = {}
@@ -177,10 +176,7 @@ class NetplanService:
         # Обновляем конфигурацию Wi-Fi для заданного интерфейса (iwface)
         netplan_config["network"]["wifis"][data["iwface"]] = netplan_wifi
 
-        if debug:
-            logger.debug(f"Updated netplan_config = {json.dumps(netplan_config)}")
-
-        # Запись изменений обратно в файл Netplan
+        # Запись в файл Netplan
         try:
             with io.open(settings.netplan_wifi01, "w", encoding="utf8") as outfile:
                 yaml.dump(
@@ -189,6 +185,8 @@ class NetplanService:
                     default_flow_style=False,
                     allow_unicode=True,
                 )
+                if debug:
+                    logger.debug(f"Updated netplan_config = {json.dumps(netplan_config)}")
         except Exception as e:
             logger.error(f"Error writing netplan file: {str(e)}")
             return False

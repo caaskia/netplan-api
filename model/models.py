@@ -23,18 +23,18 @@ class SubmitEth(BaseModel):
     deleteEth: bool
 
 
-class BaseWiFi(BaseModel):
+class BaseWiFiData(BaseModel):
     ssid: str
     ssidPassword: str
+    iwface: str
 
 
-class CreateWiFi(BaseWiFi):
-    gateway: str
-    addresses: List[str]
-    nameservers: List[str]
+class UpdateWiFiData(BaseWiFiData):
+    addresses: List[str] | None
+    nameservers: List[str] | None
 
 
-class DeleteWiFi(BaseWiFi):
+class DeleteWiFiData(BaseWiFiData):
     deleteWiFi: bool
 
 

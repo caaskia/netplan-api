@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .error-message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: red;
+        }
+
+        .center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <div class="spinner"></div>
+        <p class="loading-message">Соединение...</p>
+        <p id="error-message" class="error-message" style="display: none;">Ошибка соединения...</p>
+    </div>
+
+    <script>
+        const checkUrl = "{{ check_url }}";
+        const redirectUrl = "{{ redirect_url }}";
+        let attemptCount = {{ attempt_count }};
+        const maxAttempts = 17;
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(checkUrl);
+                const status = await response.json();
+
+                if (status.connected) {
+                    window.location.href = redirectUrl;
+                } else {
+                    attemptCount++;
+                    if (attemptCount >= maxAttempts) {
+                        document.querySelector("#error-message").style.display = "block";
+                        setTimeout(() => {
+                            window.location.href = redirectUrl;
+                        }, 1500);  // Через 1.5 секунды редирект
+                    } else {
+                        setTimeout(checkConnection, 1500); // Проверяем снова через 1.5 секунды
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking connection:", error);
+                attemptCount++;
+                if (attemptCount >= maxAttempts) {
+                    document.querySelector("#error-message").style.display = "block";
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 1500);
+                } else {
+                    setTimeout(checkConnection, 1500);
+                }
+            }
+        }
+
+        // Начинаем проверку статуса подключения
+        checkConnection();
+    </script>
+</body>
+</html>

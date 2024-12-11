@@ -9,11 +9,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from core.log import logger
 from api import netplan, station, network, wifi
+from core.log import logger
 
-VERSION = "0.0.1"
+VERSION = "v0.3.0"
 
 
 @asynccontextmanager
@@ -29,9 +30,13 @@ app = FastAPI(
     lifespan=startup_and_shutdown,
 )
 
+# Подключение маршрута для статических файлов
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+app.include_router(wifi.router, prefix="/api/wifi", tags=["wifi"])
 app.include_router(network.router, prefix="/api/network", tags=["network"])
 app.include_router(netplan.router, prefix="/api/netplan", tags=["netplan"])
-app.include_router(wifi.router, prefix="/api/wifi", tags=["wifi"])
 app.include_router(station.router, prefix="/api/station", tags=["station"])
 
 origins = ["*"]

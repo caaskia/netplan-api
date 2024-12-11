@@ -1,0 +1,28 @@
+============================================
+sudo apt-get install wireless-tools
+sudo iwgetid wlx40a5efd81e60
+----------------------------------------
+
+nmcli -t -f in-use,ssid dev wifi | grep "^*"
+
+nmcli -t -f IN-USE,SSID,MODE,FREQ,SIGNAL,SECURITY device wifi
+
+nmcli -t -f ACTIVE,SSID,MODE,FREQ,SIGNAL,SECURITY device wifi
+
+
+
+nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status
+
+
+
+
+
+
+
+
+==================
+cat /proc/net/wireless
+-----------------------
+Inter-| sta-|   Quality        |   Discarded packets               | Missed | WE
+ face | tus | link level noise |  nwid  crypt   frag  retry   misc | beacon | 22
+wlx40a5efd81e60: 0000    0.  -76.  -256.       0      0      0      0      0        0

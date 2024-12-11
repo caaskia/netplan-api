@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <div class="spinner"></div>
+        <p class="loading-message">Соединение...</p>
+    </div>
+
+    <script>
+        const checkUrl = "{{ check_url }}";
+        const redirectUrl = "{{ redirect_url }}";
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(checkUrl);
+                const status = await response.json();
+                if (status.connected) {
+                    window.location.href = redirectUrl;
+                } else {
+                    setTimeout(checkConnection, 3000); // Проверяем снова через 3 секунды
+                }
+            } catch (error) {
+                console.error("Error checking connection:", error);
+                setTimeout(checkConnection, 3000); // Повторяем попытку
+            }
+        }
+
+        // Начинаем проверку статуса подключения
+        checkConnection();
+    </script>
+</body>
+</html>

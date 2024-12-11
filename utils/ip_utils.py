@@ -287,10 +287,13 @@ def connection_wifi_up(device, ap):
                         logger.info(f'The device "{device}" is already connected')
                     return True
                 else:
-                    logger.error(f"The device name {device} does not match with {device_cli}")
+                    logger.error(
+                        f"The device name {device} does not match with {device_cli}"
+                    )
     except Exception as e:
         logger.error(f"Failed to connect Wi-Fi: {e}")
     return False
+
 
 def disconnect_wifi():
     """Отключает текущее Wi-Fi соединение, используя nmcli."""

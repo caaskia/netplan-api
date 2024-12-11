@@ -15,7 +15,8 @@ from utils.ip_utils import (
     get_current_wifi_info,
     get_available_wifi,
     is_wifi_connected,
-    disconnect_wifi, connection_wifi_up,
+    disconnect_wifi,
+    connection_wifi_up,
 )
 
 router = APIRouter()
@@ -182,8 +183,9 @@ async def update_wifi(
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
 @router.get("/upWiFi")
-async def connection_up( netplan_service: NetplanService = Depends(get_netplan_service)):
+async def connection_up(netplan_service: NetplanService = Depends(get_netplan_service)):
     netplan_config = netplan_service.get_netplan_conf(settings.netplan_wifi01)
     if netplan_config:
         if netplan_service.netplan_conf_up(netplan_config):
@@ -192,6 +194,7 @@ async def connection_up( netplan_service: NetplanService = Depends(get_netplan_s
         "status": "error",
         "message": "No active Wi-Fi connection found to disconnect.",
     }
+
 
 @router.get("/downWiFi")
 async def connection_down():

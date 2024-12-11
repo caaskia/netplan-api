@@ -136,7 +136,6 @@ class NetplanService:
                 return None
         return netplan_config
 
-
     @staticmethod
     def netplan_conf_up(netplan_config):
         wifis = netplan_config.get("network").get("wifis")
@@ -144,7 +143,6 @@ class NetplanService:
         ap_dict = wifis[device].get("access-points")
         ap = list(ap_dict.keys())[0]
         return connection_wifi_up(device, ap)
-
 
     @staticmethod
     async def create_netplan_config(data: BaseWiFiData):

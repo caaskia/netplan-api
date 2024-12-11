@@ -34,9 +34,9 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+app.include_router(wifi.router, prefix="/api/wifi", tags=["wifi"])
 app.include_router(network.router, prefix="/api/network", tags=["network"])
 app.include_router(netplan.router, prefix="/api/netplan", tags=["netplan"])
-app.include_router(wifi.router, prefix="/api/wifi", tags=["wifi"])
 app.include_router(station.router, prefix="/api/station", tags=["station"])
 
 origins = ["*"]

@@ -11,7 +11,7 @@ nmcli -t -f ACTIVE,SSID,MODE,FREQ,SIGNAL,SECURITY device wifi
 
 
 
-nmcli -t -f DEVICE,STATE,CONNECTION device status
+nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status
 
 
 
